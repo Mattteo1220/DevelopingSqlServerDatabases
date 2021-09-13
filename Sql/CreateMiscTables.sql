@@ -1,0 +1,62 @@
+USE GigiPhotographyDevelopment
+GO 
+
+DROP TABLE IF EXISTS dbo.[ApplicationLog], [dbo].[ClientAuditLog], [dbo].[ContactHistoryAuditLog]
+
+BEGIN TRY 
+BEGIN TRANSACTION CreateMiscTables
+
+CREATE TABLE [dbo].[ApplicationLog]
+(
+	ExceptionLogId INT IDENTITY(1,1) NOT NULL
+		CONSTRAINT PK_ExceptionLog_ExceptionLogId PRIMARY KEY,
+	Message NVARCHAR(500) NOT NULL,
+	Class NVARCHAR(100) NOT NULL,
+	Line INT NOT NULL,
+	Severity NVARCHAR(10) NOT NULL
+)
+
+CREATE TABLE [dbo].[ClientAuditLog]
+(
+	ClientAuditLogId INT IDENTITY(1,1) NOT NULL
+		CONSTRAINT PK_ClientAuditLog_ClientAuditLogId PRIMARY KEY,
+	ModifiedAt DATETIME2 NOT NULL,
+	ModifiedBy NVARCHAR(200) NOT NULL,
+	Operation NVARCHAR(20) NOT NULL,
+	SchemaName NVARCHAR(64) NOT NULL,
+	TableName NVARCHAR(64) NOT NULL,
+	Identifier INT NOT NULL,
+	LogData NVARCHAR(MAX)
+)
+
+CREATE TABLE [dbo].[ContactHistoryAuditLog]
+(
+	ContactHistoryAuditLogId INT IDENTITY(1,1) NOT NULL
+		CONSTRAINT PK_ContactHistoryAuditLog_ContactHistoryAuditLogId PRIMARY KEY,
+	ModifiedAt DATETIME2 NOT NULL,
+	ModifiedBy NVARCHAR(200) NOT NULL,
+	Operation NVARCHAR(20) NOT NULL,
+	SchemaName NVARCHAR(64) NOT NULL,
+	TableName NVARCHAR(64) NOT NULL,
+	Identifier INT NOT NULL,
+	LogData NVARCHAR(MAX)
+)
+
+COMMIT TRANSACTION CreateMiscTables
+END TRY
+
+BEGIN CATCH
+
+WHILE (@@TRANCOUNT > 0)
+BEGIN;
+	ROLLBACK TRANSACTION
+END;
+
+	SELECT 
+		ERROR_LINE(),
+		ERROR_MESSAGE(),
+		ERROR_NUMBER(),
+		ERROR_PROCEDURE(),
+		ERROR_SEVERITY(),
+		ERROR_STATE()
+END CATCH
