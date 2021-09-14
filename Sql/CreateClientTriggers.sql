@@ -1,7 +1,7 @@
 USE GigiPhotographyDevelopment
 GO
 
-CREATE OR ALTER TRIGGER TR_Client_After_Update
+CREATE OR ALTER TRIGGER TR_Client_After_Update_Or_Insert_Or_Delete
 ON 
 	[dbo].[Client] AFTER INSERT, UPDATE, DELETE AS 
 BEGIN 
