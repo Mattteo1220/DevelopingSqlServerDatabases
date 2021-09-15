@@ -1,7 +1,7 @@
 USE GigiPhotographyDevelopment
 GO 
 
-DROP TABLE IF EXISTS dbo.[ApplicationLog], [dbo].[ClientAuditLog], [dbo].[ContactHistoryAuditLog]
+DROP TABLE IF EXISTS dbo.[ApplicationLog], [dbo].[AuditLog]
 
 BEGIN TRY 
 BEGIN TRANSACTION CreateMiscTables
@@ -16,23 +16,10 @@ CREATE TABLE [dbo].[ApplicationLog]
 	Severity NVARCHAR(10) NOT NULL
 )
 
-CREATE TABLE [dbo].[ClientAuditLog]
+CREATE TABLE [dbo].[AuditLog]
 (
-	ClientAuditLogId INT IDENTITY(1,1) NOT NULL
-		CONSTRAINT PK_ClientAuditLog_ClientAuditLogId PRIMARY KEY,
-	ModifiedAt DATETIME2 NOT NULL,
-	ModifiedBy NVARCHAR(200) NOT NULL,
-	Operation NVARCHAR(20) NOT NULL,
-	SchemaName NVARCHAR(64) NOT NULL,
-	TableName NVARCHAR(64) NOT NULL,
-	Identifier INT NOT NULL,
-	LogData NVARCHAR(MAX)
-)
-
-CREATE TABLE [dbo].[ContactHistoryAuditLog]
-(
-	ContactHistoryAuditLogId INT IDENTITY(1,1) NOT NULL
-		CONSTRAINT PK_ContactHistoryAuditLog_ContactHistoryAuditLogId PRIMARY KEY,
+	AuditLogId INT IDENTITY(1,1) NOT NULL
+		CONSTRAINT PK_AuditLog_AuditLogId PRIMARY KEY,
 	ModifiedAt DATETIME2 NOT NULL,
 	ModifiedBy NVARCHAR(200) NOT NULL,
 	Operation NVARCHAR(20) NOT NULL,
