@@ -4,7 +4,7 @@ GO
 
 
 BEGIN TRY 
-DROP TABLE IF EXISTS dbo.Invoice, dbo.Event, dbo.Communication, dbo.Site, dbo.Photographer, dbo.Rate, dbo.Category, dbo.State, dbo.Payment, dbo.PaymentMethod, dbo.Communication, dbo.Session
+DROP TABLE IF EXISTS dbo.Invoice, dbo.Event, dbo.Communication, dbo.Site, dbo.Photographer, dbo.Rate, dbo.Category, dbo.State, dbo.Payment, dbo.PaymentMethod, dbo.Session
 
 BEGIN TRANSACTION CreateEventsCommsInvoices
 
@@ -116,9 +116,9 @@ CREATE TABLE dbo.Communication
 	Event INT NOT NULL
 		CONSTRAINT FK_Communication_Event_Event_EventId 
 			FOREIGN KEY REFERENCES dbo.Event(EventId),
-	Channel INT NOT NULL
-		CONSTRAINT FK_Communication_Channel_Channel_ChannelId
-			FOREIGN KEY REFERENCES dbo.Channel(ChannelId),
+	ContactMethod INT NOT NULL
+		CONSTRAINT FK_Communication_ContactMethod_ContacMethod_ContactMethodId
+			FOREIGN KEY REFERENCES dbo.ContactMethod(ContactMethodId),
 	CreatedAt DATETIME2 NOT NULL
 		CONSTRAINT DF_Communication_CreatedAt DEFAULT GETDATE(),
 	CreatedBy NVARCHAR(250) NOT NULL

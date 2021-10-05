@@ -129,7 +129,7 @@ BEGIN
 		CROSS APPLY
 		(
 			SELECT OldValues = (SELECT * FROM #ModifiedVerificationData WHERE #ModifiedVerificationData.VerificatinId = i1.VerificationId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-		) m2
+		) AS m2
 	END
 	DROP TABLE IF EXISTS #InsertedVerificationData
 	DROP TABLE IF EXISTS #ModifiedVerificationData
@@ -197,7 +197,7 @@ BEGIN
 		CROSS APPLY
 		(
 			SELECT oldValues = (SELECT * FROM #ModifiedRoleData WHERE #ModifiedRoleData.RoleId = m1.RoleId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-		) m2
+		)AS  m2
 	END
 	DROP TABLE IF EXISTS #InsertedRoleData
 	DROP TABLE IF EXISTS #ModifiedRoleData
@@ -265,7 +265,7 @@ BEGIN
 		CROSS APPLY
 		(
 			SELECT OldValues = (SELECT * FROM #ModifiedPromotionData WHERE #ModifiedPromotionData.PromotionId = m1.PromotionId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-		) m2
+		) AS m2
 	END
 	DROP TABLE IF EXISTS #InsertedPromotionData
 	DROP TABLE IF EXISTS #ModifiedPromotionData
@@ -331,11 +331,142 @@ BEGIN
 		CROSS APPLY
 		(
 			SELECT OldValues = (SELECT * FROM #ModifiedLoginData WHERE #ModifiedLoginData.LoginId = m1.LoginId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-		)m2
+		) AS m2
 	END
 	DROP TABLE IF EXISTS #InsertedLoginData
 	DROP TABLE IF EXISTS #ModifiedLoginData
 END
 GO 
 
+CREATE OR ALTER TRIGGER TR_Lockout_After_Insert_or_Delete_or_Update
+ON 
+	dbo.Lockout AFTER INSERT, DELETE, UPDATE 
+AS 
+BEGIN
+	IF(ROWCOUNT_BIG() = 0)
+		RETURN;
+
+	SET NOCOUNT ON 
+
+	DECLARE @OperationType NVARCHAR(20)
+
+	IF EXISTS(SELECT * FROM INSERTED)
+		IF EXISTS(SELECT * FROM DELETED)
+			SET @OperationType = 'UPDATE'
+		ELSE
+			SET @OperationType = 'INSERT'
+	ELSE
+		IF EXISTS(SELECT * FROM DELETED)
+			SET @OperationType = 'DELETE'
+		ELSE
+			SET @OperationType = 'UNKNOWN'
+
+	IF EXISTS(SELECT * FROM INSERTED) AND NOT EXISTS(SELECT * FROM DELETED)
+	BEGIN
+		SELECT * INTO #InsertedLockoutData FROM 
+		(
+			SELECT * FROM INSERTED
+			EXCEPT
+			SELECT * FROM DELETED
+		)InsertedLockoutData
+		INSERT INTO dbo.AuditLog
+			(ModifiedAt, ModifiedBy, Operation, SchemaName, TableName, Identifier, LogData)
+		SELECT 
+			GETDATE(), SYSTEM_USER, @OperationType, 'Dbo', 'Lockout', i1.LockoutId, i2.NewValues
+		FROM 
+			#InsertedLockoutData i1
+		CROSS APPLY
+		(
+			SELECT NewValues = (SELECT * FROM #InsertedLockoutData WHERE #InsertedLockoutData.LockoutId = i1.LockoutId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+		) i2
+	END
+	ELSE
+	BEGIN
+		SELECT * INTO #ModifiedLockoutData FROM 
+		(
+			SELECT * FROM DELETED
+			EXCEPT 
+			SELECT * FROM INSERTED
+		) ModifiedLockoutData 
+		INSERT INTO dbo.AuditLog 
+			(ModifiedAt, ModifiedBy, Operation, SchemaName, TableName, Identifier, LogData)
+		SELECT 
+			GETDATE(), SYSTEM_USER, @OperationType, 'Dbo', 'Lockout', m1.LockoutId, m2.oldValues
+		FROM 
+			#ModifiedLockoutData m1
+		CROSS APPLY
+		(
+			SELECT oldValues = (SELECT * FROM #ModifiedLockoutData WHERE #ModifiedLockoutData.LockoutId = m1.LockoutId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+		) m2
+	END
+	DROP TABLE IF EXISTS #InsertedLockoutData
+	DROP TABLE IF EXISTS #ModifiedLockoutData
+END	
+GO 
+
+CREATE OR ALTER TRIGGER TR_Attempt_After_Insert_or_Delete_or_Update 
+ON 
+	dbo.Attempt AFTER INSERT, DELETE, UPDATE 
+AS 
+BEGIN
+	IF(ROWCOUNT_BIG() = 0)
+		RETURN;
+
+	SET NOCOUNT ON
+
+	DECLARE @OperationType NVARCHAR(20)
+
+	IF EXISTS(SELECT * FROM INSERTED)
+		IF EXISTS(SELECT * FROM DELETED)
+			SET @OperationType = 'UPDATE'
+		ELSE
+			SET @OperationType = 'INSERT'
+	ELSE
+		IF EXISTS(SELECT * FROM DELETED)
+			SET @OperationType = 'DELETE'
+		ELSE
+			SET @OperationType = 'UNKNOWN'
+
+	IF EXISTS(SELECT * FROM INSERTED) AND NOT EXISTS(SELECT * FROM DELETED)
+	BEGIN
+		SELECT * INTO #InsertedAttemptData FROM 
+		(
+			SELECT * FROM INSERTED 
+			EXCEPT
+			SELECT * FROM DELETED
+		) InsertedAttemptData 
+		INSERT INTO dbo.AuditLog
+			(ModifiedAt, ModifiedBy, Operation, SchemaName, TableName, Identifier, LogData)
+		SELECT 
+			GETDATE(), SYSTEM_USER, @OperationType, 'Dbo', 'Attempt', i1.AttemptId, i2.NewValues
+		FROM 
+			#InsertedAttemptData i1
+		CROSS APPLY
+		(
+			SELECT NewValues = (SELECT * FROM #InsertedAttemptData WHERE #InsertedAttemptData.AttemptId = i1.AttemptId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+		) AS i2
+	END
+	ELSE
+	BEGIN
+		SELECT * INTO #ModifiedAttemptData FROM 
+		(
+			SELECT * FROM DELETED
+			EXCEPT
+			SELECT * FROM INSERTED
+		) ModifiedAttemptData 
+		INSERT INTO Dbo.AuditLog
+			(ModifiedAt, ModifiedBy, Operation, SchemaName, TableName, Identifier, LogData)
+		SELECT 
+			GETDATE(), SYSTEM_USER, @OperationType, 'Dbo', 'Attempt', m1.AttemptId, m2.OldValues
+		FROM 
+			#ModifiedAttemptData m1
+		CROSS APPLY 
+		(
+			SELECT OldValues = (SELECT * FROM #ModifiedAttemptData WHERE #ModifiedAttemptData.AttemptId = m1.AttemptId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+		) AS m2
+	END
+	DROP TABLE IF EXISTS #InsertedAttemptData
+	DROP TABLE IF EXISTS #ModifiedAttemptData
+END
+GO 
 
